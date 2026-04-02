@@ -2,3 +2,5 @@
 - Mesure de vitesse
 - Mesure d'angle
 - mesure d'altitude
+- orientation : depuis le gyroscope
+- Interroger

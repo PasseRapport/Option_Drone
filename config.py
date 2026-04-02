@@ -9,7 +9,7 @@ SEND_INTERVAL  = 0.05   # secondes entre deux trames de vol (20 Hz)
 # longue laisse des octets résiduels dans le buffer UART et corrompt la suivante.
 PAYLOAD_LENGTH = 8     # à ajuster si la valeur change dans nrf24l01p.h
 
-DEFAULT_LANG  = 'fr'
+DEFAULT_LANG  = 'en'
 
 # ── CustomTkinter — apparence ─────────────────────────
 CTK_APPEARANCE = "light"     # "light", "dark", ou "system"
