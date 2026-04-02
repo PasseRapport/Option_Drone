@@ -1,95 +1,109 @@
 # ui/control_panel.py — Panneau centre : altitude, dpad directionnel, yaw
 
-import tkinter as tk
-from config import PALETTE
+import customtkinter as ctk
+from config import COLORS
 from flight_commands import UP, DOWN, FORWARD, BACKWARD, LEFT, RIGHT, YAW_CCW, YAW_CW
 
 
-class ControlPanel(tk.Frame):
+class ControlPanel(ctk.CTkFrame):
     """
-    Pad de contrôle de vol :
+    Pad de controle de vol :
       - Altitude  : monter / descendre
-      - Direction : avant / arrière / gauche / droite
+      - Direction : avant / arriere / gauche / droite
       - Yaw       : rotation gauche (CCW) / droite (CW)
 
     Callbacks attendus
     ------------------
-    on_press(key_index)   : touche enfoncée
-    on_release(key_index) : touche relâchée
+    on_press(key_index)   : touche enfoncee
+    on_release(key_index) : touche relachee
     """
 
     def __init__(self, parent, *, on_press, on_release):
-        P = PALETTE
-        super().__init__(parent, bg=P['PANEL'], padx=16, pady=10)
+        super().__init__(parent, corner_radius=10)
         self._on_press   = on_press
         self._on_release = on_release
         self._build()
 
     # ── Construction ──────────────────────────────────
     def _build(self):
-        P = PALETTE
-        self._section("CONTRÔLE DE VOL")
+        pad = dict(padx=14, pady=(0, 2))
 
-        # Altitude
-        alt_frame = tk.LabelFrame(self, text="Altitude", bg=P['PANEL'], fg=P['SUB'],
-                                  font=("Segoe UI", 8), bd=1, padx=6, pady=4)
-        alt_frame.pack(fill="x", pady=4)
-        inner = tk.Frame(alt_frame, bg=P['PANEL'])
-        inner.pack()
-        self._action_btn(inner, "▲  MONTER",    UP,   bg=P['ACC'], row=0, col=0)
-        self._action_btn(inner, "▼  DESCENDRE", DOWN, bg=P['ACC'], row=0, col=1)
+        ctk.CTkLabel(self, text="CONTROLE DE VOL",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color=COLORS['ACC']).pack(anchor="w", **pad)
 
-        # Dpad directionnel
-        dir_frame = tk.LabelFrame(self, text="Direction", bg=P['PANEL'], fg=P['SUB'],
-                                  font=("Segoe UI", 8), bd=1, padx=6, pady=4)
-        dir_frame.pack(fill="x", pady=4)
-        pad = tk.Frame(dir_frame, bg=P['PANEL'])
-        pad.pack()
+        # ── Altitude ─────────────────────────────────
+        alt_frame = ctk.CTkFrame(self, corner_radius=8)
+        alt_frame.pack(fill="x", padx=14, pady=6)
+        ctk.CTkLabel(alt_frame, text="Altitude",
+                     font=ctk.CTkFont(size=11, weight="bold")).pack(
+                         anchor="w", padx=10, pady=(6, 2))
 
-        cfg = dict(font=("Segoe UI", 14), relief="flat", width=3, height=1)
-        self._dpad_btn(pad, "↑", FORWARD,  row=0, col=1, cfg=cfg)
-        self._dpad_btn(pad, "←", LEFT,     row=1, col=0, cfg=cfg)
-        tk.Label(pad, text="●", font=("Segoe UI", 14),
-                 bg=P['DPAD_BG'], fg=P['SUB'],
-                 width=3, height=1).grid(row=1, column=1, padx=2, pady=2,
-                                         ipadx=4, ipady=4)
-        self._dpad_btn(pad, "→", RIGHT,    row=1, col=2, cfg=cfg)
-        self._dpad_btn(pad, "↓", BACKWARD, row=2, col=1, cfg=cfg)
+        alt_btns = ctk.CTkFrame(alt_frame, fg_color="transparent")
+        alt_btns.pack(padx=10, pady=(0, 8))
+        self._action_btn(alt_btns, "▲  MONTER",    UP,
+                         fg=COLORS['ACC'], hover=COLORS['ACC_HOVER'], col=0)
+        self._action_btn(alt_btns, "▼  DESCENDRE", DOWN,
+                         fg=COLORS['ACC'], hover=COLORS['ACC_HOVER'], col=1)
 
-        # Yaw
-        yaw_frame = tk.LabelFrame(self, text="Lacet (Yaw)", bg=P['PANEL'], fg=P['SUB'],
-                                  font=("Segoe UI", 8), bd=1, padx=6, pady=4)
-        yaw_frame.pack(fill="x", pady=4)
-        yaw_inner = tk.Frame(yaw_frame, bg=P['PANEL'])
-        yaw_inner.pack()
-        self._action_btn(yaw_inner, "↺  CCW", YAW_CCW, bg=P['YAW'], row=0, col=0)
-        self._action_btn(yaw_inner, "↻  CW",  YAW_CW,  bg=P['YAW'], row=0, col=1)
+        # ── Direction (dpad) ─────────────────────────
+        dir_frame = ctk.CTkFrame(self, corner_radius=8)
+        dir_frame.pack(fill="x", padx=14, pady=6)
+        ctk.CTkLabel(dir_frame, text="Direction",
+                     font=ctk.CTkFont(size=11, weight="bold")).pack(
+                         anchor="w", padx=10, pady=(6, 2))
 
-    def _section(self, title: str):
-        P = PALETTE
-        tk.Label(self, text=title, font=("Segoe UI", 9, "bold"),
-                 bg=P['PANEL'], fg=P['ACC']).pack(anchor="w")
-        tk.Frame(self, bg=P['ACC'], height=1).pack(fill="x", pady=(0, 8))
+        dpad = ctk.CTkFrame(dir_frame, fg_color="transparent")
+        dpad.pack(padx=10, pady=(0, 8))
 
+        self._dpad_btn(dpad, "↑", FORWARD,  row=0, col=1)
+        self._dpad_btn(dpad, "←", LEFT,     row=1, col=0)
+        # Centre decoratif
+        center = ctk.CTkLabel(dpad, text="●", width=54, height=54,
+                              font=ctk.CTkFont(size=18),
+                              fg_color=COLORS['DPAD_BG'],
+                              corner_radius=8, text_color="gray50")
+        center.grid(row=1, column=1, padx=3, pady=3)
+        self._dpad_btn(dpad, "→", RIGHT,    row=1, col=2)
+        self._dpad_btn(dpad, "↓", BACKWARD, row=2, col=1)
+
+        # ── Yaw ──────────────────────────────────────
+        yaw_frame = ctk.CTkFrame(self, corner_radius=8)
+        yaw_frame.pack(fill="x", padx=14, pady=6)
+        ctk.CTkLabel(yaw_frame, text="Lacet (Yaw)",
+                     font=ctk.CTkFont(size=11, weight="bold")).pack(
+                         anchor="w", padx=10, pady=(6, 2))
+
+        yaw_btns = ctk.CTkFrame(yaw_frame, fg_color="transparent")
+        yaw_btns.pack(padx=10, pady=(0, 8))
+        self._action_btn(yaw_btns, "↺  CCW", YAW_CCW,
+                         fg=COLORS['YAW'], hover=COLORS['YAW_HOVER'], col=0)
+        self._action_btn(yaw_btns, "↻  CW",  YAW_CW,
+                         fg=COLORS['YAW'], hover=COLORS['YAW_HOVER'], col=1)
+
+    # ── Bouton d'action (altitude / yaw) ──────────────
     def _action_btn(self, parent, text: str, key_idx: int,
-                    bg: str, row: int, col: int) -> tk.Button:
-        """Bouton maintenu = commande continue."""
-        b = tk.Button(parent, text=text, bg=bg, fg="white",
-                      font=("Segoe UI", 9, "bold"), relief="flat",
-                      padx=8, pady=4)
-        b.grid(row=row, column=col, padx=4, pady=2)
+                    fg: str, hover: str, col: int):
+        b = ctk.CTkButton(parent, text=text, width=120, height=34,
+                          corner_radius=8,
+                          font=ctk.CTkFont(size=12, weight="bold"),
+                          fg_color=fg, hover_color=hover)
+        b.grid(row=0, column=col, padx=4, pady=2)
         b.bind("<ButtonPress-1>",   lambda e, k=key_idx: self._on_press(k))
         b.bind("<ButtonRelease-1>", lambda e, k=key_idx: self._on_release(k))
         return b
 
+    # ── Bouton dpad (direction) ───────────────────────
     def _dpad_btn(self, parent, symbol: str, key_idx: int,
-                  row: int, col: int, cfg: dict) -> tk.Button:
-        P = PALETTE
-        b = tk.Button(parent, text=symbol,
-                      bg=P['DPAD_BG'], fg=P['DPAD_FG'],
-                      activebackground=P['DPAD_HOVER'], activeforeground="white",
-                      **cfg)
-        b.grid(row=row, column=col, padx=2, pady=2, ipadx=4, ipady=4)
+                  row: int, col: int):
+        b = ctk.CTkButton(parent, text=symbol, width=54, height=54,
+                          corner_radius=8,
+                          font=ctk.CTkFont(size=20),
+                          fg_color=COLORS['DPAD_BG'],
+                          hover_color=COLORS['DPAD_HOVER'],
+                          text_color=COLORS['DPAD_FG'],
+                          text_color_disabled="gray50")
+        b.grid(row=row, column=col, padx=3, pady=3)
         b.bind("<ButtonPress-1>",   lambda e, k=key_idx: self._on_press(k))
         b.bind("<ButtonRelease-1>", lambda e, k=key_idx: self._on_release(k))
         return b

@@ -1,41 +1,40 @@
-# ui/connection_panel.py — Panneau gauche : connexion série + contrôle drone
+# ui/connection_panel.py — Panneau gauche : connexion serie + controle drone
 
-import tkinter as tk
-from tkinter import ttk, messagebox
-from config import PALETTE
+import customtkinter as ctk
+from tkinter import messagebox, StringVar
+from config import COLORS
 from serial_comm import DroneSerial
 
 
-class ConnectionPanel(tk.Frame):
+class ConnectionPanel(ctk.CTkFrame):
     """
-    Panneau de connexion série et de contrôle haut niveau du drone.
+    Panneau de connexion serie et de controle haut niveau du drone.
 
     Callbacks attendus
     ------------------
-    on_connect(port)  : appelé quand l'utilisateur clique "Connecter"
-    on_disconnect()   : appelé quand l'utilisateur clique "Déconnecter"
+    on_connect(port)  : appele quand l'utilisateur clique "Connecter"
+    on_disconnect()   : appele quand l'utilisateur clique "Deconnecter"
     on_start()        : envoi de $start
     on_stop()         : envoi de $stop
-    on_emergency()    : arrêt d'urgence $11111111
+    on_emergency()    : arret d'urgence $11111111
     """
 
     KEYS_INFO = [
-        ("Z / ↑",   "Avant"),
-        ("S / ↓",   "Arrière"),
-        ("Q / ←",   "Gauche"),
-        ("D / →",   "Droite"),
-        ("Espace",  "Monter"),
-        ("Shift",   "Descendre"),
-        ("A",       "Yaw gauche"),
-        ("E",       "Yaw droit"),
-        ("Entrée",  "Start"),
-        ("Échap",   "Urgence"),
+        ("Z / Up",     "Avant"),
+        ("S / Down",   "Arriere"),
+        ("Q / Left",   "Gauche"),
+        ("D / Right",  "Droite"),
+        ("Espace",     "Monter"),
+        ("Shift",      "Descendre"),
+        ("A",          "Yaw gauche"),
+        ("E",          "Yaw droit"),
+        ("Entree",     "Start"),
+        ("Echap",      "Urgence"),
     ]
 
     def __init__(self, parent, *, on_connect, on_disconnect,
                  on_start, on_stop, on_emergency):
-        P = PALETTE
-        super().__init__(parent, bg=P['PANEL'], padx=12, pady=10)
+        super().__init__(parent, corner_radius=10)
 
         self._on_connect    = on_connect
         self._on_disconnect = on_disconnect
@@ -48,79 +47,94 @@ class ConnectionPanel(tk.Frame):
 
     # ── Construction ──────────────────────────────────
     def _build(self):
-        P = PALETTE
-        self._section("CONNEXION")
+        pad = dict(padx=14, pady=(0, 2))
 
-        # Sélection port COM
-        port_row = tk.Frame(self, bg=P['PANEL'])
-        port_row.pack(fill="x", pady=2)
-        tk.Label(port_row, text="Port COM", bg=P['PANEL'], fg=P['TEXT'],
-                 font=("Segoe UI", 9), width=9, anchor="w").pack(side="left")
-        self.port_var   = tk.StringVar()
-        self.port_combo = ttk.Combobox(port_row, textvariable=self.port_var,
-                                       width=10, state="readonly")
+        self._section_label("CONNEXION", **pad)
+
+        # Selection port COM
+        port_row = ctk.CTkFrame(self, fg_color="transparent")
+        port_row.pack(fill="x", **pad)
+
+        ctk.CTkLabel(port_row, text="Port COM",
+                     font=ctk.CTkFont(size=12)).pack(side="left", padx=(0, 6))
+
+        self.port_var = StringVar()
+        self.port_combo = ctk.CTkComboBox(
+            port_row, variable=self.port_var, width=120,
+            state="readonly", corner_radius=6,
+        )
         self.port_combo.pack(side="left")
-        ttk.Button(port_row, text="↻", width=3,
-                   command=self.refresh_ports).pack(side="left", padx=2)
+
+        ctk.CTkButton(port_row, text="↻", width=32, height=28,
+                      corner_radius=6, command=self.refresh_ports,
+                      fg_color="gray70", hover_color="gray60",
+                      text_color="gray20").pack(side="left", padx=(4, 0))
 
         # Bouton connecter
-        btn_row = tk.Frame(self, bg=P['PANEL'])
-        btn_row.pack(fill="x", pady=6)
-        self.btn_connect = tk.Button(
-            btn_row, text="Connecter", bg=P['GREEN'], fg="white",
-            font=("Segoe UI", 9, "bold"), relief="flat",
-            padx=8, command=self._toggle_connect,
+        self.btn_connect = ctk.CTkButton(
+            self, text="Connecter", height=32, corner_radius=8,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            fg_color=COLORS['GREEN'], hover_color="#15803d",
+            command=self._toggle_connect,
         )
-        self.btn_connect.pack(side="left")
+        self.btn_connect.pack(fill="x", **pad)
 
-        # Indicateur d'état
-        self.lbl_status = tk.Label(self, text="● Déconnecté",
-                                   bg=P['PANEL'], fg=P['RED'],
-                                   font=("Segoe UI", 9))
-        self.lbl_status.pack(anchor="w", pady=4)
+        # Indicateur d'etat
+        self.lbl_status = ctk.CTkLabel(
+            self, text="●  Deconnecte",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS['RED'],
+        )
+        self.lbl_status.pack(anchor="w", padx=14, pady=(0, 6))
 
         self._separator()
-        self._section("DRONE")
+        self._section_label("DRONE", **pad)
 
-        self.btn_start = tk.Button(
-            self, text="▶  START", bg=P['GREEN'], fg="white",
-            font=("Segoe UI", 10, "bold"), relief="flat",
-            padx=10, pady=4, command=self._on_start, state="disabled",
+        self.btn_start = ctk.CTkButton(
+            self, text="▶  START", height=36, corner_radius=8,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=COLORS['GREEN'], hover_color="#15803d",
+            command=self._on_start, state="disabled",
         )
-        self.btn_start.pack(fill="x", pady=2)
+        self.btn_start.pack(fill="x", **pad)
 
-        self.btn_stop = tk.Button(
-            self, text="■  STOP", bg=P['RED'], fg="white",
-            font=("Segoe UI", 10, "bold"), relief="flat",
-            padx=10, pady=4, command=self._on_stop, state="disabled",
+        self.btn_stop = ctk.CTkButton(
+            self, text="■  STOP", height=36, corner_radius=8,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=COLORS['RED'], hover_color="#b91c1c",
+            command=self._on_stop, state="disabled",
         )
-        self.btn_stop.pack(fill="x", pady=2)
+        self.btn_stop.pack(fill="x", **pad)
 
-        tk.Button(
-            self, text="⚠  URGENCE", bg="#ff0000", fg="white",
-            font=("Segoe UI", 10, "bold"), relief="flat",
-            padx=10, pady=6, command=self._on_emergency,
-        ).pack(fill="x", pady=(8, 2))
+        ctk.CTkButton(
+            self, text="⚠  URGENCE", height=40, corner_radius=8,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=COLORS['EMERGENCY'], hover_color="#cc0000",
+            command=self._on_emergency,
+        ).pack(fill="x", padx=14, pady=(8, 4))
 
         self._separator()
-        self._section("CLAVIER")
+        self._section_label("CLAVIER", **pad)
 
         for key, action in self.KEYS_INFO:
-            row = tk.Frame(self, bg=P['PANEL'])
-            row.pack(fill="x")
-            tk.Label(row, text=key, bg=P['PANEL'], fg=P['ACC'],
-                     font=("Consolas", 8), width=10, anchor="w").pack(side="left")
-            tk.Label(row, text=action, bg=P['PANEL'], fg=P['TEXT'],
-                     font=("Segoe UI", 8), anchor="w").pack(side="left")
+            row = ctk.CTkFrame(self, fg_color="transparent")
+            row.pack(fill="x", padx=14)
+            ctk.CTkLabel(row, text=key, width=80,
+                         font=ctk.CTkFont(family="Consolas", size=11),
+                         text_color=COLORS['ACC'],
+                         anchor="w").pack(side="left")
+            ctk.CTkLabel(row, text=action,
+                         font=ctk.CTkFont(size=11),
+                         anchor="w").pack(side="left")
 
-    def _section(self, title: str):
-        P = PALETTE
-        tk.Label(self, text=title, font=("Segoe UI", 9, "bold"),
-                 bg=P['PANEL'], fg=P['ACC']).pack(anchor="w")
-        tk.Frame(self, bg=P['ACC'], height=1).pack(fill="x", pady=(0, 8))
+    def _section_label(self, title: str, **pack_kw):
+        ctk.CTkLabel(self, text=title,
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color=COLORS['ACC']).pack(anchor="w", **pack_kw)
 
     def _separator(self):
-        tk.Frame(self, bg=PALETTE['SUB'], height=1).pack(fill="x", pady=8)
+        ctk.CTkFrame(self, height=2, fg_color="gray75").pack(
+            fill="x", padx=14, pady=8)
 
     # ── Actions ───────────────────────────────────────
     def _toggle_connect(self):
@@ -130,29 +144,34 @@ class ConnectionPanel(tk.Frame):
             port = self.port_var.get()
             if not port:
                 messagebox.showwarning("Port manquant",
-                                       "Sélectionnez un port COM.")
+                                       "Selectionnez un port COM.")
                 return
             self._on_connect(port)
 
     # ── API publique ──────────────────────────────────
     def refresh_ports(self):
-        """Met à jour la liste des ports COM disponibles."""
+        """Met a jour la liste des ports COM disponibles."""
         ports = DroneSerial.list_ports()
-        self.port_combo['values'] = ports
+        self.port_combo.configure(values=ports)
         if ports:
-            self.port_combo.set(ports[0])
+            self.port_var.set(ports[0])
 
     def set_connected(self, connected: bool):
-        """Met à jour l'apparence selon l'état de connexion."""
-        P = PALETTE
+        """Met a jour l'apparence selon l'etat de connexion."""
         self._connected = connected
         if connected:
-            self.btn_connect.configure(text="Déconnecter", bg=P['RED'])
-            self.lbl_status.configure(text="● Connecté",   fg=P['GREEN'])
+            self.btn_connect.configure(text="Deconnecter",
+                                       fg_color=COLORS['RED'],
+                                       hover_color="#b91c1c")
+            self.lbl_status.configure(text="●  Connecte",
+                                      text_color=COLORS['GREEN'])
             self.btn_start.configure(state="normal")
             self.btn_stop.configure(state="normal")
         else:
-            self.btn_connect.configure(text="Connecter",    bg=P['GREEN'])
-            self.lbl_status.configure(text="● Déconnecté", fg=P['RED'])
+            self.btn_connect.configure(text="Connecter",
+                                       fg_color=COLORS['GREEN'],
+                                       hover_color="#15803d")
+            self.lbl_status.configure(text="●  Deconnecte",
+                                      text_color=COLORS['RED'])
             self.btn_start.configure(state="disabled")
             self.btn_stop.configure(state="disabled")

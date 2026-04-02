@@ -1,82 +1,90 @@
-# ui/pid_panel.py — Panneau droite : réglage des coefficients PID
+# ui/pid_panel.py — Panneau droite : reglage des coefficients PID
 #
 # Protocole PID : *[axe][coeff][valeur 6 chars]
 #   axe   : H (hauteur) | P (pitch) | R (roll) | Y (yaw)
 #   coeff : P (Kp) | I (Ki) | D (Kd)
-#   Ex: *HP0.5000  -> Kp du contrôleur Hauteur = 0.5
+#   Ex: *HP0.5000  -> Kp du controleur Hauteur = 0.5
 
-import tkinter as tk
+import customtkinter as ctk
+from tkinter import StringVar
 import time
-from config import PALETTE, AXIS_LABELS
+from config import COLORS, AXIS_LABELS
 
 
-class PidPanel(tk.Frame):
+class PidPanel(ctk.CTkFrame):
     """
-    Grille d'édition des coefficients PID pour les 4 axes.
+    Grille d'edition des coefficients PID pour les 4 axes.
 
     Callback attendu
     ----------------
-    on_send(axis, coeff, raw_str) : appelé pour chaque coefficient à envoyer.
-        axis     : 'H' | 'P' | 'R' | 'Y'
-        coeff    : 'P' | 'I' | 'D'
-        raw_str  : valeur saisie (str, validée par l'appelant)
+    on_send(axis, coeff, raw_str) : appele pour chaque coefficient a envoyer.
     """
 
     COEFFS = ('P', 'I', 'D')
 
     def __init__(self, parent, *, on_send, log_callback=None):
-        P = PALETTE
-        super().__init__(parent, bg=P['PANEL'], padx=14, pady=10)
-        self._on_send     = on_send
-        self._log         = log_callback or (lambda _: None)
-        self._pid_vars: dict[str, dict[str, tk.StringVar]] = {}
+        super().__init__(parent, corner_radius=10)
+        self._on_send = on_send
+        self._log     = log_callback or (lambda _: None)
+        self._pid_vars: dict[str, dict[str, StringVar]] = {}
         self._build()
 
     # ── Construction ──────────────────────────────────
     def _build(self):
-        P = PALETTE
-        tk.Label(self, text="RÉGLAGE PID", font=("Segoe UI", 9, "bold"),
-                 bg=P['PANEL'], fg=P['ACC']).pack(anchor="w")
-        tk.Frame(self, bg=P['ACC'], height=1).pack(fill="x", pady=(0, 8))
+        pad = dict(padx=14)
 
-        # En-têtes colonnes
-        hdr = tk.Frame(self, bg=P['PANEL'])
-        hdr.pack(fill="x")
-        widths = [7, 7, 7, 7, 5]
-        for col, (txt, w) in enumerate(zip(["Axe", "Kp", "Ki", "Kd", ""], widths)):
-            tk.Label(hdr, text=txt, bg=P['PANEL'], fg=P['SUB'],
-                     font=("Segoe UI", 8, "bold"),
-                     width=w, anchor="center").grid(row=0, column=col, padx=2)
+        ctk.CTkLabel(self, text="REGLAGE PID",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color=COLORS['ACC']).pack(anchor="w", **pad, pady=(10, 4))
+
+        # En-tetes colonnes
+        hdr = ctk.CTkFrame(self, fg_color="transparent")
+        hdr.pack(fill="x", **pad)
+        for col, (txt, w) in enumerate(
+                zip(["Axe", "Kp", "Ki", "Kd", ""], [70, 70, 70, 70, 40])):
+            ctk.CTkLabel(hdr, text=txt, width=w,
+                         font=ctk.CTkFont(size=11, weight="bold"),
+                         text_color="gray50",
+                         anchor="center").grid(row=0, column=col, padx=2)
 
         # Lignes par axe
         for axis, label in AXIS_LABELS.items():
             self._pid_vars[axis] = {}
-            row_f = tk.Frame(self, bg=P['PANEL'])
-            row_f.pack(fill="x", pady=3)
+            row_f = ctk.CTkFrame(self, fg_color="transparent")
+            row_f.pack(fill="x", **pad, pady=3)
 
-            tk.Label(row_f, text=label, bg=P['PANEL'], fg=P['TEXT'],
-                     font=("Segoe UI", 9), width=7, anchor="w").grid(
-                         row=0, column=0, padx=2)
+            ctk.CTkLabel(row_f, text=label, width=70,
+                         font=ctk.CTkFont(size=12),
+                         anchor="w").grid(row=0, column=0, padx=2)
 
             for ci, coeff in enumerate(self.COEFFS):
-                var = tk.StringVar(value="0.0")
+                var = StringVar(value="0.0")
                 self._pid_vars[axis][coeff] = var
-                tk.Entry(row_f, textvariable=var, width=7,
-                         bg=P['ENTRY_BG'], fg=P['TEXT'],
-                         insertbackground=P['TEXT'],
-                         relief="flat", font=("Consolas", 9),
-                         justify="center").grid(row=0, column=ci + 1, padx=2)
+                ctk.CTkEntry(row_f, textvariable=var, width=70, height=30,
+                             corner_radius=6,
+                             font=ctk.CTkFont(family="Consolas", size=12),
+                             justify="center").grid(
+                                 row=0, column=ci + 1, padx=2)
 
-            tk.Button(row_f, text="✓", bg=P['PID_BTN'], fg="white",
-                      font=("Segoe UI", 9, "bold"), relief="flat", padx=4,
-                      command=lambda a=axis: self._send_axis(a)).grid(
-                          row=0, column=4, padx=2)
+            ctk.CTkButton(row_f, text="✓", width=36, height=30,
+                          corner_radius=6,
+                          font=ctk.CTkFont(size=13, weight="bold"),
+                          fg_color=COLORS['PID_BTN'],
+                          hover_color="#c2410c",
+                          command=lambda a=axis: self._send_axis(a)).grid(
+                              row=0, column=4, padx=2)
 
-        tk.Frame(self, bg=PALETTE['SUB'], height=1).pack(fill="x", pady=8)
-        tk.Button(self, text="Envoyer tout", bg=PALETTE['ACC'], fg="white",
-                  font=("Segoe UI", 9, "bold"), relief="flat",
-                  padx=8, pady=4,
-                  command=self._send_all).pack(fill="x")
+        # Separateur + bouton global
+        ctk.CTkFrame(self, height=2, fg_color="gray75").pack(
+            fill="x", padx=14, pady=8)
+
+        ctk.CTkButton(self, text="Envoyer tout", height=34,
+                      corner_radius=8,
+                      font=ctk.CTkFont(size=13, weight="bold"),
+                      fg_color=COLORS['ACC'],
+                      hover_color=COLORS['ACC_HOVER'],
+                      command=self._send_all).pack(
+                          fill="x", padx=14, pady=(0, 10))
 
     # ── Actions ───────────────────────────────────────
     def _send_axis(self, axis: str):
@@ -84,12 +92,12 @@ class PidPanel(tk.Frame):
         for coeff in self.COEFFS:
             raw = self._pid_vars[axis][coeff].get().strip()
             try:
-                float(raw)   # validation
+                float(raw)
             except ValueError:
                 self._log(f"[ERREUR] PID {axis}/{coeff} — valeur invalide : '{raw}'")
                 continue
             self._on_send(axis, coeff, raw)
-            time.sleep(0.05)  # laisse le temps à l'émetteur
+            time.sleep(0.05)
 
     def _send_all(self):
         for axis in AXIS_LABELS:

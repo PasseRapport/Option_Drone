@@ -12,20 +12,21 @@ AXIS_LABELS = {
     'Y': 'Yaw',
 }
 
-# ── Palette graphique (thème bleu ardoise clair) ──────
-PALETTE = {
-    'BG':         '#eef2f7',   # fond principal
-    'PANEL':      '#dde4ef',   # fond des panneaux
+# ── CustomTkinter — apparence ─────────────────────────
+CTK_APPEARANCE = "light"     # "light", "dark", ou "system"
+CTK_THEME      = "blue"      # thème couleur par défaut de CTk
+
+# ── Couleurs personnalisées ───────────────────────────
+COLORS = {
     'ACC':        '#2563eb',   # accent bleu
+    'ACC_HOVER':  '#1d4ed8',   # accent bleu foncé au survol
     'RED':        '#dc2626',   # rouge (stop, erreur)
     'GREEN':      '#16a34a',   # vert (connexion, start)
-    'TEXT':       '#1e293b',   # texte principal
-    'SUB':        '#64748b',   # texte secondaire / séparateurs
-    'DPAD_BG':    '#b8c9e0',   # fond boutons dpad
-    'DPAD_FG':    '#1e40af',   # icône boutons dpad
-    'DPAD_HOVER': '#2563eb',   # fond boutons dpad au survol
-    'ENTRY_BG':   '#c8d5e8',   # fond champs de saisie
-    'CONSOLE_BG': '#f0f5fb',   # fond console
+    'EMERGENCY':  '#ff0000',   # rouge vif urgence
     'YAW':        '#7c3aed',   # violet — boutons yaw
-    'PID_BTN':    '#ea580c',   # orange — bouton appliquer PID
+    'YAW_HOVER':  '#6d28d9',   # violet foncé survol
+    'PID_BTN':    '#ea580c',   # orange — appliquer PID
+    'DPAD_BG':    '#b8c9e0',   # fond boutons dpad
+    'DPAD_FG':    '#1e40af',   # texte boutons dpad
+    'DPAD_HOVER': '#2563eb',   # fond boutons dpad survol
 }

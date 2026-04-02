@@ -1,10 +1,10 @@
-# ui/app.py — Fenêtre principale : assemble les panneaux et orchestre la logique
+# ui/app.py — Fenetre principale : assemble les panneaux et orchestre la logique
 
 import threading
 import time
-import tkinter as tk
+import customtkinter as ctk
 
-from config import PALETTE, SEND_INTERVAL
+from config import COLORS, CTK_APPEARANCE, CTK_THEME, SEND_INTERVAL
 from serial_comm import DroneSerial
 from flight_commands import FlightCommands, KEY_MAP
 
@@ -14,20 +14,22 @@ from ui.pid_panel        import PidPanel
 from ui.console_panel    import ConsolePanel
 
 
-class DroneController(tk.Tk):
-    """Fenêtre principale de l'interface drone."""
+class DroneController(ctk.CTk):
+    """Fenetre principale de l'interface drone."""
 
     def __init__(self):
+        ctk.set_appearance_mode(CTK_APPEARANCE)
+        ctk.set_default_color_theme(CTK_THEME)
+
         super().__init__()
         self.title("ENSEA Drone Controller")
         self.resizable(False, False)
-        self.configure(bg=PALETTE['BG'])
 
-        # Modèles métier
+        # Modeles metier
         self.flight = FlightCommands()
         self.drone  = DroneSerial(log_callback=self._log)
 
-        # État d'envoi continu
+        # Etat d'envoi continu
         self._send_active = False
         self._send_thread: threading.Thread | None = None
 
@@ -37,16 +39,16 @@ class DroneController(tk.Tk):
 
     # ── Construction de l'interface ───────────────────
     def _build_ui(self):
-        P = PALETTE
+        # Titre
+        ctk.CTkLabel(self, text="ENSEA Drone Controller",
+                     font=ctk.CTkFont(size=22, weight="bold"),
+                     text_color=COLORS['ACC']).pack(pady=(16, 6))
 
-        tk.Label(self, text="ENSEA Drone Controller",
-                 font=("Segoe UI", 16, "bold"),
-                 bg=P['BG'], fg=P['ACC']).pack(pady=(12, 4))
+        # Corps principal — 3 panneaux cote a cote
+        body = ctk.CTkFrame(self, fg_color="transparent")
+        body.pack(padx=14, pady=4, fill="both")
 
-        body = tk.Frame(self, bg=P['BG'])
-        body.pack(padx=12, pady=4, fill="both")
-
-        # Panneau gauche — connexion + contrôle drone
+        # Panneau gauche — connexion + controle drone
         self.conn_panel = ConnectionPanel(
             body,
             on_connect    = self._on_connect,
@@ -55,7 +57,7 @@ class DroneController(tk.Tk):
             on_stop       = self._stop_drone,
             on_emergency  = self._emergency_stop,
         )
-        self.conn_panel.grid(row=0, column=0, sticky="ns", padx=(0, 8))
+        self.conn_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
 
         # Panneau centre — pad de vol
         self.ctrl_panel = ControlPanel(
@@ -63,7 +65,7 @@ class DroneController(tk.Tk):
             on_press   = self._key_press,
             on_release = self._key_release,
         )
-        self.ctrl_panel.grid(row=0, column=1, sticky="ns", padx=(0, 8))
+        self.ctrl_panel.grid(row=0, column=1, sticky="nsew", padx=(0, 8))
 
         # Panneau droite — PID
         self.pid_panel = PidPanel(
@@ -71,11 +73,11 @@ class DroneController(tk.Tk):
             on_send      = self._send_pid_coeff,
             log_callback = self._log,
         )
-        self.pid_panel.grid(row=0, column=2, sticky="ns")
+        self.pid_panel.grid(row=0, column=2, sticky="nsew")
 
         # Console bas de page
         self.console = ConsolePanel(self)
-        self.console.pack(padx=12, pady=(6, 10), fill="both")
+        self.console.pack(padx=14, pady=(8, 14), fill="both")
 
         self.conn_panel.refresh_ports()
 
@@ -106,7 +108,7 @@ class DroneController(tk.Tk):
         if not self.flight.any_active():
             self._stop_sending()
 
-    # ── Envoi continu (thread séparé) ─────────────────
+    # ── Envoi continu (thread separe) ─────────────────
     def _start_sending(self):
         self._send_active = True
         self._send_thread = threading.Thread(
@@ -131,7 +133,7 @@ class DroneController(tk.Tk):
         self.drone.disconnect()
         self.conn_panel.set_connected(False)
 
-    # ── Callbacks contrôle drone ──────────────────────
+    # ── Callbacks controle drone ──────────────────────
     def _start_drone(self):
         self.drone.send("$start")
 
@@ -144,7 +146,7 @@ class DroneController(tk.Tk):
         self.flight.reset()
         self._stop_sending()
         self.drone.send("$11111111")
-        self._log("[⚠] ARRÊT D'URGENCE ENVOYÉ")
+        self._log("[!] ARRET D'URGENCE ENVOYE")
 
     # ── Callback PID ──────────────────────────────────
     def _send_pid_coeff(self, axis: str, coeff: str, raw_str: str):

@@ -1,34 +1,35 @@
 # ui/console_panel.py — Panneau console (log série)
 
-import tkinter as tk
-from tkinter import scrolledtext
-from config import PALETTE
+import customtkinter as ctk
+from config import COLORS
 
 
-class ConsolePanel(tk.Frame):
+class ConsolePanel(ctk.CTkFrame):
     """Zone de log scrollable affichant les messages TX/RX et info."""
 
     def __init__(self, parent):
-        P = PALETTE
-        super().__init__(parent, bg=P['BG'])
+        super().__init__(parent, fg_color="transparent")
 
-        tk.Label(self, text="Console", font=("Segoe UI", 9, "bold"),
-                 bg=P['BG'], fg=P['ACC']).pack(anchor="w")
+        ctk.CTkLabel(self, text="Console",
+                     font=ctk.CTkFont(size=13, weight="bold"),
+                     text_color=COLORS['ACC']).pack(anchor="w")
 
-        self._text = scrolledtext.ScrolledText(
-            self, height=7,
-            bg=P['CONSOLE_BG'], fg=P['TEXT'],
-            font=("Consolas", 8), relief="flat",
-            state="disabled", insertbackground=P['TEXT'],
+        self._text = ctk.CTkTextbox(
+            self, height=140,
+            font=ctk.CTkFont(family="Consolas", size=11),
+            corner_radius=8,
+            state="disabled",
         )
-        self._text.pack(fill="both")
+        self._text.pack(fill="both", expand=True, pady=(4, 0))
 
-        tk.Button(self, text="Effacer", bg=P['PANEL'], fg=P['SUB'],
-                  font=("Segoe UI", 8), relief="flat", padx=6,
-                  command=self.clear).pack(anchor="e", pady=2)
+        ctk.CTkButton(self, text="Effacer", width=80, height=26,
+                      font=ctk.CTkFont(size=11),
+                      fg_color="gray70", hover_color="gray60",
+                      text_color="gray20", corner_radius=6,
+                      command=self.clear).pack(anchor="e", pady=(4, 0))
 
     def append(self, message: str) -> None:
-        """Ajoute une ligne à la console (thread-safe via after())."""
+        """Ajoute une ligne a la console (thread-safe via after())."""
         self._text.configure(state="normal")
         self._text.insert("end", message + "\n")
         self._text.see("end")
