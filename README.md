@@ -1,4 +1,4 @@
-![alt text](image.png)
+![Interface](docs/image.png)
 
 # ENSEA Drone Controller — Interface graphique PC
 
