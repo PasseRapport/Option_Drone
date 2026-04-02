@@ -3,13 +3,18 @@
 # Le STM32 émetteur reçoit les trames via UART (115200 baud) et les
 # retransmet au drone via NRF24L01+ (2.4 GHz, 250 kbps).
 #
-# Trames envoyées : ASCII + '\n'  (ex: "$10000000\n", "$start\n")
+# ⚠️  Format d'envoi : exactement PAYLOAD_LENGTH octets, padding \x00, SANS \n
+#     Le STM32 lit un nombre fixe d'octets (taille NRF24 payload).
+#     Un octet supplémentaire (\n) ou une taille incorrecte laisse des résidus
+#     dans le buffer UART et corrompt toutes les trames suivantes.
+#
+# Trames envoyées : b"$10000000\x00\x00\x00\x00\x00\x00\x00"  (16 octets)
 # Trames reçues   : messages de debug UART du drone (logs état, PID…)
 
 import threading
 import serial
 import serial.tools.list_ports
-from config import BAUD_RATE
+from config import BAUD_RATE, PAYLOAD_LENGTH
 
 
 class DroneSerial:
@@ -56,11 +61,18 @@ class DroneSerial:
 
     # ── Envoi ─────────────────────────────────────────
     def send(self, message: str) -> None:
-        """Envoie une trame ASCII terminée par '\\n'."""
+        """Envoie une trame de taille fixe PAYLOAD_LENGTH (padding \\x00, sans \\n).
+
+        Le STM32 lit exactement PAYLOAD_LENGTH octets à la fois.
+        Toute taille différente laisserait des résidus dans le buffer UART
+        et corromprait les trames suivantes.
+        """
         if not self.is_connected():
             return
         try:
-            self._ser.write((message + '\n').encode('ascii'))
+            payload = (message.encode('ascii')[:PAYLOAD_LENGTH]
+                       .ljust(PAYLOAD_LENGTH, b'\x00'))
+            self._ser.write(payload)
             self._log(f"[TX] {message}")
         except serial.SerialException as exc:
             self._log(f"[ERREUR] Envoi : {exc}")
@@ -68,14 +80,14 @@ class DroneSerial:
     # ── Réception (thread) ────────────────────────────
     def _read_loop(self) -> None:
         while not self._stop_read.is_set():
-            if self._ser and self._ser.is_open:
-                try:
+            try:
+                if self._ser and self._ser.is_open and self._ser.in_waiting:
                     line = self._ser.readline()
                     if line:
-                        decoded = line.decode('ascii', errors='replace').strip()
+                        decoded = line.decode('utf-8', errors='replace').strip()
                         self._log(f"[RX] {decoded}")
-                except serial.SerialException:
-                    break
+            except serial.SerialException:
+                break
 
     # ── Utilitaire ────────────────────────────────────
     @staticmethod

@@ -36,10 +36,23 @@ KEY_MAP: dict[str, int] = {
 class FlightCommands:
     """Maintient l'état des touches actives et construit la trame de commande."""
 
+    # Paires de commandes opposées : activer l'une désactive l'autre
+    _OPPOSITES: dict[int, int] = {
+        UP:      DOWN,     DOWN:     UP,
+        FORWARD: BACKWARD, BACKWARD: FORWARD,
+        LEFT:    RIGHT,    RIGHT:    LEFT,
+        YAW_CCW: YAW_CW,  YAW_CW:   YAW_CCW,
+    }
+
     def __init__(self):
         self._keys: list[bool] = [False] * 8
 
     def set_key(self, index: int, pressed: bool) -> None:
+        if pressed:
+            # Annule automatiquement la commande opposée
+            opposite = self._OPPOSITES.get(index)
+            if opposite is not None:
+                self._keys[opposite] = False
         self._keys[index] = pressed
 
     def build_frame(self) -> str:
