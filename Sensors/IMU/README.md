@@ -1,12 +1,14 @@
 # MPU-9250 Agnostic IMU Driver
 
-Victor FOUREL
-Anya ADJOU
-Aaliyah MOHAMED
+**Authors:**
+* Victor FOUREL
+* Anya ADJOU
+* Aaliyah MOHAMED
+
+---
 
 A lightweight, hardware-agnostic C library for the **MPU-9250** (9-Axis IMU).  
 This driver provides processed and calibrated accelerometer, gyroscope, and tilt-compensated magnetometer data.
-
 ---
 
 ## Features
