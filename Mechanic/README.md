@@ -6,6 +6,8 @@ Within this folder you will find .stl files (for 3D printing) and .step files (3
 Drone schematic:
 ![alt text](images/schematic.png)
 
+Accomplishments:
+Mounting for battery, ultrasonic sensor, STM32, and IMU. Wired and soldered components to corresponding locations. Assembled the drone frame.
 
 Things to improve:
 Wire management, mounting for IEC boards, potential PCB shield, and reprint mounting for STM32 and IMU
