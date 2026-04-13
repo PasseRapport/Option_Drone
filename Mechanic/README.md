@@ -4,4 +4,4 @@ The parts are designed for a quadcopter configuration with 4 motors.
 Within this folder you will find .stl files (for 3D printing) and .step files (3D modeling) for the buck regulator, ultrasonic sensor, and battery holder.
 
 Drone schematic:
-![alt text](schematic.png)
+![alt text](images/schematic.png)
