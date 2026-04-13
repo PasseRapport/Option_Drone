@@ -1,0 +1,12 @@
+../Core/Src/main.c:73:5:__io_putchar	1
+../Core/Src/main.c:79:8:stm32_i2c_read	2
+../Core/Src/main.c:86:8:stm32_i2c_write	2
+../Core/Src/main.c:93:6:stm32_delay	1
+../Core/Src/main.c:105:5:main	4
+../Core/Src/main.c:232:6:SystemClock_Config	4
+../Core/Src/main.c:287:13:MX_I2C1_Init	4
+../Core/Src/main.c:335:13:MX_TIM1_Init	6
+../Core/Src/main.c:409:13:MX_TIM2_Init	5
+../Core/Src/main.c:462:13:MX_USART2_UART_Init	2
+../Core/Src/main.c:497:13:MX_GPIO_Init	1
+../Core/Src/main.c:539:6:Error_Handler	1

@@ -1,0 +1,14 @@
+#STM32 Cube IDE
+
+/.metadata/
+/.settings/
+
+# VS Code
+/.vscode/
+
+# Python virtual environments
+venv/
+__pycache__/
+
+.claude/
+.claude

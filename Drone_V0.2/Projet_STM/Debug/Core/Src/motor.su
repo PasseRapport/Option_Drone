@@ -1,0 +1,6 @@
+../Core/Src/motor.c:9:6:motor_ArmESC	16	static
+../Core/Src/motor.c:16:5:percentageToMicrosecondsAtHighState	24	static
+../Core/Src/motor.c:24:6:motor_SetPower	32	static
+../Core/Src/motor.c:40:6:motor_Init	16	static
+../Core/Src/motor.c:46:6:motor_Security	16	static
+../Core/Src/motor.c:53:6:motor_TurnOn	16	static
