@@ -47,63 +47,74 @@ python main.py
 
 ## Protocole de communication
 
-Le PC envoie des trames ASCII via UART (115 200 baud) au STM32 émetteur,
+Le PC envoie des trames **binaires** via UART (115 200 baud) au STM32 émetteur,
 qui les retransmet au drone par radio NRF24L01+ (2,4 GHz, 250 kbps).
 
-### Trames de vol — `$ABCDEFGH`
+Toutes les trames font exactement `PAYLOAD_LENGTH` octets (padding `0x00`).
+Le premier octet est toujours l'**identifiant de commande**.
 
-Trame de 9 caractères, chaque lettre vaut `'0'` ou `'1'` :
+---
 
-| Position | Action         |
-|----------|----------------|
-| `[1]`    | Monter         |
-| `[2]`    | Descendre      |
-| `[3]`    | Avant (pitch+) |
-| `[4]`    | Arrière        |
-| `[5]`    | Gauche (roll+) |
-| `[6]`    | Droite         |
-| `[7]`    | Yaw CCW        |
-| `[8]`    | Yaw CW         |
+### Trames de vol — `0x24` + 1 octet de bits
+
+| Octet | Valeur      | Description              |
+|-------|-------------|--------------------------|
+| `[0]` | `0x24` (`$`) | Identifiant vol          |
+| `[1]` | bits 7→0    | État de chaque axe       |
+
+Mapping des bits de l'octet `[1]` :
+
+| Bit | Axe            |
+|-----|----------------|
+| 7   | Monter (UP)    |
+| 6   | Descendre      |
+| 5   | Avant (pitch+) |
+| 4   | Arrière        |
+| 3   | Gauche (roll+) |
+| 2   | Droite         |
+| 1   | Yaw CCW        |
+| 0   | Yaw CW         |
 
 Exemples :
 ```
-$10000000   → monter
-$00110000   → avant + gauche
-$11111111   → arrêt d'urgence
+24 80   → monter        (0b10000000)
+24 28   → avant+gauche  (0b00101000)
 ```
 
 ### Commandes spéciales
 
-| Trame    | Effet                           |
-|----------|---------------------------------|
-| `$start` | Initialisation + passage en vol |
-| `$stop`  | Atterrissage / arrêt moteurs    |
+| Trame     | Effet                           |
+|-----------|---------------------------------|
+| `24 01`   | Initialisation + passage en vol |
+| `24 02`   | Atterrissage / arrêt moteurs    |
+| `24 FF`   | Arrêt d'urgence immédiat        |
 
-### Puissance moteurs — `%PPP`
+### Puissance moteurs — `0x25` + 1 octet
 
-Trame de 4 caractères : `%` + valeur sur 3 chiffres (000–100).
+| Octet | Valeur        | Description              |
+|-------|---------------|--------------------------|
+| `[0]` | `0x25` (`%`)  | Identifiant puissance    |
+| `[1]` | `0x00–0x64`   | Puissance en % (0 à 100) |
 
 Exemples :
 ```
-%000   → 0 % (moteurs à l'arrêt)
-%050   → 50 %
-%100   → 100 % (pleine puissance)
+25 00   → 0 %  (moteurs à l'arrêt)
+25 32   → 50 %
+25 64   → 100 % (pleine puissance)
 ```
 
 Envoyée à chaque déplacement du slider **Motor Power** dans l'interface.
 
-### Modification PID — `*[axe][coeff][valeur]`
+### Modification PID — `0x2A` + axe + coeff + float
 
-Format : `*` + axe (1 char) + coefficient (1 char) + valeur (6 chars)
+| Octet   | Valeur         | Description                        |
+|---------|----------------|------------------------------------|
+| `[0]`   | `0x2A` (`*`)   | Identifiant PID                    |
+| `[1]`   | `'H'/'P'/'R'/'Y'` | Axe (Hauteur/Pitch/Roll/Yaw)    |
+| `[2]`   | `'P'/'I'/'D'`  | Coefficient                        |
+| `[3-6]` | float IEEE 754 little-endian | Valeur numérique     |
 
-| Axe | Description | Coeff | Description |
-|-----|-------------|-------|-------------|
-| `H` | Hauteur     | `P`   | Kp          |
-| `P` | Pitch       | `I`   | Ki          |
-| `R` | Roll        | `D`   | Kd          |
-| `Y` | Yaw         |       |             |
-
-Exemple : `*HP0.5000` → Kp Hauteur = 0.5
+Exemple : Kp Hauteur = 0.5 → `2A 48 50 00 00 00 3F`
 
 ---
 
@@ -118,11 +129,11 @@ et le code C du drone (`mainloop.c`) qui la traite.
 
 **Python — `flight_commands.py`**
 ```python
-# L'état UP=True construit la trame :
-def build_frame(self) -> str:
-    bits = ''.join('1' if k else '0' for k in self._keys)
-    return f"${bits}"
-# → envoie "$10000000\n" via UART
+# L'état UP=True construit la trame binaire :
+def build_frame(self) -> bytes:
+    bits = sum(1 << (7 - i) for i, k in enumerate(self._keys) if k)
+    return bytes([0x24, bits])
+# → envoie b'\x24\x80\x00\x00\x00\x00\x00\x00' via UART
 ```
 
 **STM32 — `mainloop.c`**
@@ -142,7 +153,7 @@ else if (validated_command[2]=='1' && validated_command[1]=='0') {
 
 ### ↑ Bouton "Avant" (ou touche `Z`)
 
-**Python** → envoie `$00100000`
+**Python** → envoie `24 20` (bit 5 = avant)
 
 **STM32 — `mainloop.c`**
 ```c
@@ -162,7 +173,7 @@ else {
 
 ### ↺ Bouton "Yaw CCW" (ou touche `A`)
 
-**Python** → envoie `$00000010`
+**Python** → envoie `24 02` (bit 1 = yaw CCW)
 
 **STM32 — `mainloop.c`**
 ```c
@@ -182,7 +193,7 @@ else if (validated_command[8]=='1' && validated_command[7]=='0') {
 **Python — `ui/app.py`**
 ```python
 def _start_drone(self):
-    self.drone.send("$start")    # → "$start\n" via UART
+    self.drone.send_raw(CMD_START)    # → b'\x24\x01\x00...' via UART
 ```
 
 **STM32 — `mainloop.c`**
@@ -202,7 +213,7 @@ case IDLE_STATE:
 
 ### ■ Bouton "STOP"
 
-**Python** → envoie `$stop`
+**Python** → envoie `24 02`
 
 **STM32 — `mainloop.c`**
 ```c
@@ -226,7 +237,7 @@ void stop() {
 
 ### ⚠ Bouton "URGENCE" (ou touche `Échap`)
 
-**Python** → envoie `$11111111`
+**Python** → envoie `24 FF`
 
 **STM32 — `mainloop.c`**
 ```c
@@ -249,9 +260,9 @@ motor_SetPower(&MOTOR_BACK_LEFT,   0);
 **Python — `ui/app.py`**
 ```python
 def _send_pid_coeff(self, axis, coeff, raw_str):
-    val_str = f"{float(raw_str):.4f}"[:6].ljust(6, '0')
-    self.drone.send(f"*{axis}{coeff}{val_str}")
-# → envoie "*HP0.5000\n" via UART
+    payload = bytes([0x2A, ord(axis), ord(coeff)]) + struct.pack('<f', float(raw_str))
+    self.drone.send_raw(payload)
+# → envoie b'\x2A\x48\x50\x00\x00\x00\x3F\x00' pour Kp Hauteur = 0.5
 ```
 
 **STM32 — `mainloop.c`**
@@ -285,8 +296,9 @@ case COEFFICENT_MODIFICATION_STATE:
 def _on_power_change(self, value: int):
     if not self.drone.is_connected():
         return
-    self.drone.send(f"%{value:03d}")
-# → envoie "%050" pour 50 % via UART
+    # 0x25 = '%' comme identifiant, value = 0–100 sur 1 octet binaire
+    self.drone.send_raw(bytes([0x25, value]))
+# → envoie b'\x25\x32\x00...' pour 50 % via UART
 ```
 
 > ⚠️ Le firmware STM32 doit être mis à jour pour interpréter le préfixe `%`

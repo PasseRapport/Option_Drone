@@ -1,12 +1,13 @@
 # ui/app.py — Fenetre principale : assemble les panneaux et orchestre la logique
 
+import struct
 import threading
 import time
 import customtkinter as ctk
 
 from config import COLORS, CTK_APPEARANCE, CTK_THEME, SEND_INTERVAL, DEFAULT_LANG, TRANSLATIONS
 from serial_comm import DroneSerial
-from flight_commands import FlightCommands, KEY_MAP
+from flight_commands import FlightCommands, KEY_MAP, CMD_START, CMD_STOP, CMD_EMERGENCY
 
 from ui.connection_panel import ConnectionPanel
 from ui.control_panel    import ControlPanel
@@ -156,7 +157,7 @@ class DroneController(ctk.CTk):
 
     def _send_loop(self):
         while self._send_active:
-            self.drone.send(self.flight.build_frame())
+            self.drone.send_raw(self.flight.build_frame())
             time.sleep(SEND_INTERVAL)
 
     # ── Callbacks connexion ───────────────────────────
@@ -175,7 +176,7 @@ class DroneController(ctk.CTk):
         if not self.drone.is_connected():
             self._log(TRANSLATIONS[self._lang]['warn_not_conn'])
             return
-        self.drone.send("$start")
+        self.drone.send_raw(CMD_START)
 
     def _stop_drone(self):
         if not self.drone.is_connected():
@@ -183,7 +184,7 @@ class DroneController(ctk.CTk):
             return
         self.flight.reset()
         self._stop_sending()
-        self.drone.send("$stop")
+        self.drone.send_raw(CMD_STOP)
 
     def _emergency_stop(self):
         self.flight.reset()
@@ -191,19 +192,21 @@ class DroneController(ctk.CTk):
         if not self.drone.is_connected():
             self._log(TRANSLATIONS[self._lang]['warn_not_conn'])
             return
-        self.drone.send("$11111111")
+        self.drone.send_raw(CMD_EMERGENCY)
         self._log("[!] ARRET D'URGENCE ENVOYE")
 
     # ── Callback puissance moteurs ────────────────────
     def _on_power_change(self, value: int):
         if not self.drone.is_connected():
             return
-        self.drone.send(f"%{value:03d}")
+        # Trame binaire : 0x25 ('%') comme identifiant + valeur sur 1 octet (0–100)
+        self.drone.send_raw(bytes([0x25, value]))
 
     # ── Callback PID ──────────────────────────────────
     def _send_pid_coeff(self, axis: str, coeff: str, raw_str: str):
-        val_str = f"{float(raw_str):.4f}"[:6].ljust(6, '0')
-        self.drone.send(f"*{axis}{coeff}{val_str}")
+        # Trame : 0x2A ('*') + axe (1 octet) + coeff (1 octet) + float IEEE 754 LE (4 octets)
+        payload = bytes([0x2A, ord(axis), ord(coeff)]) + struct.pack('<f', float(raw_str))
+        self.drone.send_raw(payload)
 
     # ── Log (thread-safe) ─────────────────────────────
     def _log(self, message: str):
