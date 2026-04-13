@@ -80,9 +80,10 @@ class DroneController(ctk.CTk):
 
         self.ctrl_panel = ControlPanel(
             body,
-            on_press   = self._key_press,
-            on_release = self._key_release,
-            lang       = self._lang,
+            on_press        = self._key_press,
+            on_release      = self._key_release,
+            on_power_change = self._on_power_change,
+            lang            = self._lang,
         )
         self.ctrl_panel.grid(row=0, column=1, sticky="nsew", padx=(0, 8))
 
@@ -192,6 +193,12 @@ class DroneController(ctk.CTk):
             return
         self.drone.send("$11111111")
         self._log("[!] ARRET D'URGENCE ENVOYE")
+
+    # ── Callback puissance moteurs ────────────────────
+    def _on_power_change(self, value: int):
+        if not self.drone.is_connected():
+            return
+        self.drone.send(f"%{value:03d}")
 
     # ── Callback PID ──────────────────────────────────
     def _send_pid_coeff(self, axis: str, coeff: str, raw_str: str):

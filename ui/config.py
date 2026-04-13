@@ -71,6 +71,8 @@ TRANSLATIONS: dict[str, dict] = {
         'btn_down':          '▼  DESCENDRE',
         'sub_direction':     'Direction',
         'sub_yaw':           'Lacet (Yaw)',
+        'sub_power':         'Puissance Moteurs',
+        'lbl_power':         'Puissance : {}%',
         # PID
         'section_pid':       'RÉGLAGE PID',
         'col_axis':          'Axe',
@@ -121,6 +123,8 @@ TRANSLATIONS: dict[str, dict] = {
         'btn_down':          '▼  DESCEND',
         'sub_direction':     'Direction',
         'sub_yaw':           'Yaw',
+        'sub_power':         'Motor Power',
+        'lbl_power':         'Power: {}%',
         # PID
         'section_pid':       'PID TUNING',
         'col_axis':          'Axis',

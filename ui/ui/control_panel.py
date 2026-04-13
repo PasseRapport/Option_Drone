@@ -15,11 +15,12 @@ class ControlPanel(ctk.CTkFrame):
     on_release(key_index) : touche relachee
     """
 
-    def __init__(self, parent, *, on_press, on_release, lang=DEFAULT_LANG):
+    def __init__(self, parent, *, on_press, on_release, on_power_change=None, lang=DEFAULT_LANG):
         super().__init__(parent, corner_radius=10)
-        self._on_press   = on_press
-        self._on_release = on_release
-        self._lang       = lang
+        self._on_press        = on_press
+        self._on_release      = on_release
+        self._on_power_change = on_power_change
+        self._lang            = lang
         self._build()
 
     # ── Construction ──────────────────────────────────
@@ -80,6 +81,30 @@ class ControlPanel(ctk.CTkFrame):
         self._btn_ycw  = self._action_btn(yaw_btns, "↻  CW",  YAW_CW,
                                           fg=COLORS['YAW'], hover=COLORS['YAW_HOVER'], col=1)
 
+        # ── Puissance moteurs ─────────────────────────
+        self._frame_pwr = ctk.CTkFrame(self, corner_radius=8)
+        self._frame_pwr.pack(fill="x", padx=14, pady=6)
+        self._lbl_pwr_title = ctk.CTkLabel(self._frame_pwr, text=T['sub_power'],
+                                           font=ctk.CTkFont(size=11, weight="bold"))
+        self._lbl_pwr_title.pack(anchor="w", padx=10, pady=(6, 2))
+
+        self._pwr_value = 0
+        self._lbl_pwr_value = ctk.CTkLabel(
+            self._frame_pwr,
+            text=T['lbl_power'].format(self._pwr_value),
+            font=ctk.CTkFont(size=11),
+        )
+        self._lbl_pwr_value.pack(anchor="w", padx=10)
+
+        self._slider_pwr = ctk.CTkSlider(
+            self._frame_pwr,
+            from_=0, to=100,
+            number_of_steps=100,
+            command=self._slider_moved,
+        )
+        self._slider_pwr.set(0)
+        self._slider_pwr.pack(fill="x", padx=10, pady=(2, 10))
+
     # ── Bouton d'action (altitude / yaw) ──────────────
     def _action_btn(self, parent, text: str, key_idx: int,
                     fg: str, hover: str, col: int) -> ctk.CTkButton:
@@ -105,6 +130,14 @@ class ControlPanel(ctk.CTkFrame):
         b.bind("<ButtonRelease-1>", lambda e, k=key_idx: self._on_release(k))
         return b
 
+    # ── Slider puissance ──────────────────────────────
+    def _slider_moved(self, value: float):
+        self._pwr_value = int(value)
+        T = TRANSLATIONS[self._lang]
+        self._lbl_pwr_value.configure(text=T['lbl_power'].format(self._pwr_value))
+        if self._on_power_change:
+            self._on_power_change(self._pwr_value)
+
     # ── API publique ──────────────────────────────────
     def set_language(self, lang: str):
         self._lang = lang
@@ -115,3 +148,5 @@ class ControlPanel(ctk.CTkFrame):
         self._lbl_yaw.configure(text=T['sub_yaw'])
         self._btn_up.configure(text=T['btn_up'])
         self._btn_down.configure(text=T['btn_down'])
+        self._lbl_pwr_title.configure(text=T['sub_power'])
+        self._lbl_pwr_value.configure(text=T['lbl_power'].format(self._pwr_value))

@@ -79,6 +79,19 @@ $11111111   → arrêt d'urgence
 | `$start` | Initialisation + passage en vol |
 | `$stop`  | Atterrissage / arrêt moteurs    |
 
+### Puissance moteurs — `%PPP`
+
+Trame de 4 caractères : `%` + valeur sur 3 chiffres (000–100).
+
+Exemples :
+```
+%000   → 0 % (moteurs à l'arrêt)
+%050   → 50 %
+%100   → 100 % (pleine puissance)
+```
+
+Envoyée à chaque déplacement du slider **Motor Power** dans l'interface.
+
 ### Modification PID — `*[axe][coeff][valeur]`
 
 Format : `*` + axe (1 char) + coefficient (1 char) + valeur (6 chars)
@@ -262,6 +275,22 @@ case COEFFICENT_MODIFICATION_STATE:
     }
     state = IDLE_STATE;
 ```
+
+---
+
+### 🎚 Slider "Motor Power"
+
+**Python — `ui/app.py`**
+```python
+def _on_power_change(self, value: int):
+    if not self.drone.is_connected():
+        return
+    self.drone.send(f"%{value:03d}")
+# → envoie "%050" pour 50 % via UART
+```
+
+> ⚠️ Le firmware STM32 doit être mis à jour pour interpréter le préfixe `%`
+> et ajuster le PWM de base des moteurs en conséquence.
 
 ---
 
