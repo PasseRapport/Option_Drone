@@ -79,15 +79,20 @@ $11111111   → arrêt d'urgence
 | `$start` | Initialisation + passage en vol |
 | `$stop`  | Atterrissage / arrêt moteurs    |
 
-### Puissance moteurs — `%PPP`
+### Puissance moteurs — binaire `0x25 0xVV`
 
-Trame de 4 caractères : `%` + valeur sur 3 chiffres (000–100).
+Trame **binaire** de 2 octets significatifs (paddée à `PAYLOAD_LENGTH`) :
+
+| Octet | Valeur       | Description                    |
+|-------|--------------|--------------------------------|
+| `[0]` | `0x25` (`%`) | Identifiant de commande        |
+| `[1]` | `0x00–0x64`  | Puissance en % (0 à 100)       |
 
 Exemples :
 ```
-%000   → 0 % (moteurs à l'arrêt)
-%050   → 50 %
-%100   → 100 % (pleine puissance)
+25 00   → 0 %  (moteurs à l'arrêt)
+25 32   → 50 %
+25 64   → 100 % (pleine puissance)
 ```
 
 Envoyée à chaque déplacement du slider **Motor Power** dans l'interface.
@@ -285,8 +290,9 @@ case COEFFICENT_MODIFICATION_STATE:
 def _on_power_change(self, value: int):
     if not self.drone.is_connected():
         return
-    self.drone.send(f"%{value:03d}")
-# → envoie "%050" pour 50 % via UART
+    # 0x25 = '%' comme identifiant, value = 0–100 sur 1 octet binaire
+    self.drone.send_raw(bytes([0x25, value]))
+# → envoie b'\x25\x32\x00...' pour 50 % via UART
 ```
 
 > ⚠️ Le firmware STM32 doit être mis à jour pour interpréter le préfixe `%`

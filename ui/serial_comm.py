@@ -61,7 +61,7 @@ class DroneSerial:
 
     # ── Envoi ─────────────────────────────────────────
     def send(self, message: str) -> None:
-        """Envoie une trame de taille fixe PAYLOAD_LENGTH (padding \\x00, sans \\n).
+        """Envoie une trame ASCII de taille fixe PAYLOAD_LENGTH (padding \\x00, sans \\n).
 
         Le STM32 lit exactement PAYLOAD_LENGTH octets à la fois.
         Toute taille différente laisserait des résidus dans le buffer UART
@@ -74,6 +74,21 @@ class DroneSerial:
                        .ljust(PAYLOAD_LENGTH, b'\x00'))
             self._ser.write(payload)
             self._log(f"[TX] {message}")
+        except serial.SerialException as exc:
+            self._log(f"[ERREUR] Envoi : {exc}")
+
+    def send_raw(self, data: bytes) -> None:
+        """Envoie une trame binaire brute de taille fixe PAYLOAD_LENGTH (padding \\x00).
+
+        Utiliser pour les commandes dont la valeur est un octet binaire pur
+        (ex : puissance moteur sur 1 octet, 0x00–0x64).
+        """
+        if not self.is_connected():
+            return
+        try:
+            payload = data[:PAYLOAD_LENGTH].ljust(PAYLOAD_LENGTH, b'\x00')
+            self._ser.write(payload)
+            self._log(f"[TX] {data.hex(' ').upper()}")
         except serial.SerialException as exc:
             self._log(f"[ERREUR] Envoi : {exc}")
 
