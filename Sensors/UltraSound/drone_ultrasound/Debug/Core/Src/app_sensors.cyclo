@@ -1,0 +1,3 @@
+../Core/Src/app_sensors.c:10:13:uart_print	1
+../Core/Src/app_sensors.c:15:6:App_Sensors_Init	1
+../Core/Src/app_sensors.c:25:6:App_Sensors_Run	9

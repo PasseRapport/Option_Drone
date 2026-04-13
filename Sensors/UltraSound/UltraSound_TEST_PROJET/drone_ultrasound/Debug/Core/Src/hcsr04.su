@@ -1,5 +1,0 @@
-../Core/Src/hcsr04.c:3:13:delay_us	24	static
-../Core/Src/hcsr04.c:11:6:HCSR04_Init	24	static
-../Core/Src/hcsr04.c:34:19:HCSR04_Trigger	16	static
-../Core/Src/hcsr04.c:51:6:HCSR04_EchoCallback	24	static
-../Core/Src/hcsr04.c:74:9:HCSR04_ReadDistanceCm	16	static
