@@ -194,3 +194,19 @@ to ensure consistent Euler angle calculations.
 | **Mag X** | → Gyro Y |  |
 | **Mag Y** | → Gyro X |  |
 | **Mag Z** | → -Gyro Z | Points downwards relative to chip surface |
+
+---
+
+## Project Status & Roadmap
+
+### What Works
+* **MPU-9250 Data Acquisition**: Successfully retrieving raw data, computed angles (Roll, Pitch, Heading), and angular velocities.
+* **Agnostic Architecture**: The hardware abstraction via I2C wrappers is fully implemented and functional.
+* **Initial Calibration**: A first pass at magnetometer calibration is implemented and yields functional baseline results.
+
+### What Is Not Implemented
+* **BMP180 Barometer**: The pressure sensor included on the Grove 10DOF module is currently bypassed; the driver strictly uses the MPU-9250 (accel/gyro/mag).
+
+### To Be Improved (Roadmap)
+* **Magnetometer Calibration**: Deepen testing and verify the robustness and accuracy of the hard-iron calibration routine under different environments.
+* **Altitude Estimation (BMP180)**: Implement the BMP180 barometer to estimate altitude. This will be highly relevant for drone flights at higher altitudes, given the sensor's ~1-meter precision.
